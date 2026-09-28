@@ -1,0 +1,458 @@
+ !DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderner Taschenrechner</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-button {
+            transition: all 0.15s ease-in-out;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-button:active {
+            transform: translateY(1px) scale(0.97);
+        }
+
+        /* Button Variations */
+        .btn-number {
+            background: rgba(51, 65, 85, 0.6);
+            color: #f8fafc;
+        }
+        .btn-number:hover {
+            background: rgba(71, 85, 105, 0.8);
+        }
+
+        .btn-operator {
+            background: rgba(99, 102, 241, 0.25);
+            color: #818cf8;
+            font-weight: 600;
+        }
+        .btn-operator:hover {
+            background: rgba(99, 102, 241, 0.4);
+            color: #ffffff;
+        }
+
+        .btn-action {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            font-weight: 600;
+        }
+        .btn-action:hover {
+            background: rgba(239, 68, 68, 0.35);
+            color: #ffffff;
+        }
+
+        .btn-equal {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: #ffffff;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+        .btn-equal:hover {
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+            filter: brightness(1.1);
+        }
+
+        /* Custom Scrollbar for History */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4 min-h-screen text-slate-100">
+
+    <div class="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-5 relative overflow-hidden">
+        
+        <!-- Top Navigation / Actions -->
+        <div class="flex justify-between items-center text-xs text-slate-400">
+            <span class="font-semibold tracking-wider text-indigo-400 uppercase flex items-center gap-1.5">
+                <i class="fa-solid fa-calculator"></i> Calculator Pro
+            </span>
+            <div class="flex gap-2">
+                <button id="toggle-history-btn" class="hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition flex items-center gap-1.5" title="Verlauf anzeigen">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Verlauf
+                </button>
+                <button id="open-github-modal" class="hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition flex items-center gap-1.5" title="GitHub Pages Anleitung">
+                    <i class="fa-brands fa-github"></i> GitHub
+                </button>
+            </div>
+        </div>
+
+        <!-- Calculator Display -->
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-4 flex flex-col justify-between items-end min-h-[110px] shadow-inner transition-all">
+            <div id="history-display" class="text-slate-400 text-sm sm:text-base font-mono h-6 overflow-x-auto w-full text-right whitespace-nowrap custom-scrollbar"></div>
+            <div id="current-display" class="text-3xl sm:text-4xl font-bold font-mono tracking-wider text-white overflow-x-auto w-full text-right whitespace-nowrap custom-scrollbar">0</div>
+        </div>
+
+        <!-- Keypad Grid -->
+        <div class="grid grid-cols-4 gap-3 text-lg font-medium">
+            <!-- Row 1 -->
+            <button class="glass-button btn-action rounded-2xl py-3.5 flex items-center justify-center text-base" data-action="all-clear">AC</button>
+            <button class="glass-button btn-action rounded-2xl py-3.5 flex items-center justify-center text-base" data-action="delete"><i class="fa-solid fa-delete-left"></i></button>
+            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="percent">%</button>
+            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="/">÷</button>
+
+            <!-- Row 2 -->
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="7">7</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="8">8</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="9">9</button>
+            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="*">×</button>
+
+            <!-- Row 3 -->
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="4">4</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="5">5</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="6">6</button>
+            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="-">−</button>
+
+            <!-- Row 4 -->
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="1">1</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="2">2</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="3">3</button>
+            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="+">+</button>
+
+            <!-- Row 5 -->
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center text-base" data-action="negate">±</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="0">0</button>
+            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center font-bold" data-value=".">,</button>
+            <button class="glass-button btn-equal rounded-2xl py-3.5 flex items-center justify-center text-xl" data-action="calculate">=</button>
+        </div>
+
+        <!-- Footer Notice -->
+        <div class="text-center text-xs text-slate-500 mt-1">
+            Unterstützt Tastatureingabe • Mit ❤️ für GitHub Pages
+        </div>
+    </div>
+
+    <!-- History Drawer (Overlay) -->
+    <div id="history-drawer" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden flex justify-center items-end sm:items-center p-4">
+        <div class="w-full max-w-md glass-panel rounded-3xl p-6 max-h-[80vh] flex flex-col gap-4 shadow-2xl border border-slate-700/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-700/50">
+                <h3 class="text-lg font-bold text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Berechnungsverlauf
+                </h3>
+                <button id="close-history-btn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div id="history-list" class="flex flex-col gap-2.5 overflow-y-auto max-h-[50vh] pr-1 custom-scrollbar">
+                <p class="text-slate-500 text-center py-8">Noch keine Berechnungen durchgeführt.</p>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button id="clear-history-btn" class="w-full py-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition text-sm font-medium">
+                    Verlauf leeren
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GitHub Pages Modal -->
+    <div id="github-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="w-full max-w-lg glass-panel rounded-3xl p-6 max-h-[90vh] overflow-y-auto custom-scrollbar border border-slate-700/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-700/50">
+                <h3 class="text-lg font-bold text-indigo-300 flex items-center gap-2">
+                    <i class="fa-brands fa-github text-2xl"></i> Auf GitHub Pages bereitstellen
+                </h3>
+                <button id="close-github-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-4 my-4 text-sm text-slate-300 leading-relaxed">
+                <p>Folge diesen einfachen Schritten, um deinen Taschenrechner kostenlos auf GitHub zu veröffentlichen:</p>
+
+                <ol class="list-decimal list-inside space-y-2.5 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <li><strong class="text-white">GitHub Account:</strong> Melde dich auf <a href="https://github.com" target="_blank" class="text-indigo-400 underline">github.com</a> an.</li>
+                    <li><strong class="text-white">Neues Repository:</strong> Klicke auf das <strong>"+"</strong>-Symbol oben rechts &rarr; <strong>New repository</strong>.</li>
+                    <li><strong class="text-white">Name vergeben:</strong> Nenne es z.B. <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">taschenrechner</code> und erstelle es (Public).</li>
+                    <li><strong class="text-white">Datei hochladen:</strong> Klicke auf <strong>"uploading an existing file"</strong>. Lade diese Datei unter dem Dateinamen <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">index.html</code> hoch.</li>
+                    <li><strong class="text-white">GitHub Pages aktivieren:</strong> Gehe in deinem Repository zu <strong>Settings</strong> &rarr; <strong>Pages</strong> (linke Menüleiste).</li>
+                    <li><strong class="text-white">Quelle wählen:</strong> Wähle unter <em>Build and deployment / Branch</em> den Branch <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">main</code> (oder <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">master</code>) und klicke auf <strong>Save</strong>.</li>
+                </ol>
+
+                <p class="text-xs text-slate-400 bg-indigo-950/40 p-3 rounded-lg border border-indigo-800/40">
+                    <i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i> Nach 1-2 Minuten ist deine Webseite unter <code class="text-indigo-300">https://dein-username.github.io/taschenrechner/</code> weltweit erreichbar!
+                </p>
+            </div>
+
+            <button id="close-github-modal-btn" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition">
+                Verstanden!
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Calculator Engine State ---
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let shouldResetDisplay = false;
+        let history = [];
+
+        // --- DOM Elements ---
+        const currentDisplay = document.getElementById('current-display');
+        const historyDisplay = document.getElementById('history-display');
+        const historyDrawer = document.getElementById('history-drawer');
+        const historyList = document.getElementById('history-list');
+        const githubModal = document.getElementById('github-modal');
+
+        // Format display number (German format with commas for decimals)
+        function formatNumber(numStr) {
+            if (numStr === 'Fehler' || numStr === '') return numStr;
+            
+            // Handle negative sign
+            let prefix = '';
+            if (numStr.startsWith('-')) {
+                prefix = '-';
+                numStr = numStr.substring(1);
+            }
+
+            const parts = numStr.split('.');
+            let integerPart = parts[0];
+            const decimalPart = parts.length > 1 ? ',' + parts[1] : '';
+
+            // Add thousands separator (dots)
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            return prefix + integerPart + decimalPart;
+        }
+
+        // Update Screen Displays
+        function updateDisplay() {
+            currentDisplay.textContent = formatNumber(currentInput);
+            if (operator !== null) {
+                const opSymbol = getOperatorSymbol(operator);
+                historyDisplay.textContent = `${formatNumber(previousInput)} ${opSymbol}`;
+            } else {
+                historyDisplay.textContent = '';
+            }
+        }
+
+        function getOperatorSymbol(op) {
+            switch(op) {
+                case '+': return '+';
+                case '-': return '−';
+                case '*': return '×';
+                case '/': return '÷';
+                default: return op;
+            }
+        }
+
+        // Key/Button Handlers
+        function appendNumber(number) {
+            if (currentInput === 'Fehler') currentInput = '0';
+
+            if (number === '.' && currentInput.includes('.')) return;
+
+            if (shouldResetDisplay) {
+                currentInput = number === '.' ? '0.' : number;
+                shouldResetDisplay = false;
+            } else {
+                if (currentInput === '0' && number !== '.') {
+                    currentInput = number;
+                } else {
+                    currentInput += number;
+                }
+            }
+            updateDisplay();
+        }
+
+        function handleOperator(op) {
+            if (currentInput === 'Fehler') return;
+
+            if (operator !== null && !shouldResetDisplay) {
+                calculateResult();
+            }
+
+            previousInput = currentInput;
+            operator = op;
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        function calculateResult() {
+            if (operator === null || shouldResetDisplay) return;
+
+            let result = 0;
+            const prev = parseFloat(previousInput);
+            const curr = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(curr)) return;
+
+            switch (operator) {
+                case '+':
+                    result = prev + curr;
+                    break;
+                case '-':
+                    result = prev - curr;
+                    break;
+                case '*':
+                    result = prev * curr;
+                    break;
+                case '/':
+                    if (curr === 0) {
+                        currentInput = 'Fehler';
+                        operator = null;
+                        previousInput = '';
+                        updateDisplay();
+                        return;
+                    }
+                    result = prev / curr;
+                    break;
+            }
+
+            // Fix floating point inaccuracies (e.g. 0.1 + 0.2)
+            result = Math.round(result * 1e10) / 1e10;
+
+            const fullCalculation = `${formatNumber(previousInput)} ${getOperatorSymbol(operator)} ${formatNumber(currentInput)} = ${formatNumber(result.toString())}`;
+            
+            // Add to history
+            addHistoryItem(fullCalculation, result.toString());
+
+            currentInput = result.toString();
+            operator = null;
+            previousInput = '';
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            shouldResetDisplay = false;
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            if (currentInput === 'Fehler' || shouldResetDisplay) {
+                clearAll();
+                return;
+            }
+
+            if (currentInput.length === 1 || (currentInput.length === 2 && currentInput.startsWith('-'))) {
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function toggleNegate() {
+            if (currentInput === 'Fehler' || currentInput === '0') return;
+            currentInput = (parseFloat(currentInput) * -1).toString();
+            updateDisplay();
+        }
+
+        function calculatePercent() {
+            if (currentInput === 'Fehler') return;
+            currentInput = (parseFloat(currentInput) / 100).toString();
+            updateDisplay();
+        }
+
+        // History Drawer Logic
+        function addHistoryItem(calculationText, rawResult) {
+            history.unshift({ calc: calculationText, result: rawResult });
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (history.length === 0) {
+                historyList.innerHTML = '<p class="text-slate-500 text-center py-8">Noch keine Berechnungen durchgeführt.</p>';
+                return;
+            }
+
+            historyList.innerHTML = history.map((item, index) => `
+                <div onclick="useHistoryResult('${item.result}')" class="bg-slate-800/60 hover:bg-slate-700/60 p-3 rounded-xl cursor-pointer transition border border-slate-700/40 flex flex-col items-end group">
+                    <span class="text-xs text-slate-400 font-mono">${item.calc}</span>
+                </div>
+            `).join('');
+        }
+
+        function useHistoryResult(rawResult) {
+            currentInput = rawResult;
+            shouldResetDisplay = false;
+            updateDisplay();
+            historyDrawer.classList.add('hidden');
+        }
+
+        // Event Listeners for UI Buttons
+        document.querySelectorAll('button[data-value]').forEach(btn => {
+            btn.addEventListener('click', () => appendNumber(btn.dataset.value));
+        });
+
+        document.querySelectorAll('button[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'operator') handleOperator(btn.dataset.value);
+                if (action === 'calculate') calculateResult();
+                if (action === 'all-clear') clearAll();
+                if (action === 'delete') deleteLast();
+                if (action === 'negate') toggleNegate();
+                if (action === 'percent') calculatePercent();
+            });
+        });
+
+        // Keyboard Shortcuts Support
+        window.addEventListener('keydown', (e) => {
+            if (githubModal.classList.contains('hidden') === false) return; // Ignore if modal open
+
+            if ((e.key >= '0' && e.key <= '9')) appendNumber(e.key);
+            if (e.key === '.' || e.key === ',') appendNumber('.');
+            if (e.key === '+') handleOperator('+');
+            if (e.key === '-') handleOperator('-');
+            if (e.key === '*') handleOperator('*');
+            if (e.key === '/') {
+                e.preventDefault();
+                handleOperator('/');
+            }
+            if (e.key === 'Enter' || e.key === '=') {
+                e.preventDefault();
+                calculateResult();
+            }
+            if (e.key === 'Backspace') deleteLast();
+            if (e.key === 'Escape') clearAll();
+            if (e.key === '%') calculatePercent();
+        });
+
+        // Modal Controls
+        document.getElementById('toggle-history-btn').addEventListener('click', () => historyDrawer.classList.remove('hidden'));
+        document.getElementById('close-history-btn').addEventListener('click', () => historyDrawer.classList.add('hidden'));
+        document.getElementById('clear-history-btn').addEventListener('click', () => {
+            history = [];
