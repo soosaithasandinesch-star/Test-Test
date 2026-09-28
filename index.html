@@ -1,458 +1,429 @@
- !DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moderner Taschenrechner</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arithmetik R·01 — Taschenrechner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --case:#E7E1D1;
+    --lcd:#212820;
+    --lcd-ink:#D8E6CE;
+    --lcd-dim:rgba(216,230,206,.42);
+    --lcd-err:#F08A62;
+    --num:#37342D;   --num-well:#201E18;  --num-ink:#EFE9D9;
+    --util:#48443A;  --util-well:#2B2820; --util-ink:#CFC8B4;
+    --op:#C6552C;    --op-well:#8C3817;   --op-ink:#F7E9DC;
+    --eq:#DE6231;    --eq-well:#A03F17;   --eq-ink:#FFF2E7;
+    --brand:#4B4233; --brand-dim:#8A7E66;
+  }
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
-            min-height: 100vh;
-        }
+  body{
+    margin:0;
+    min-height:100svh;
+    background:#242019;
+    display:grid;
+    place-items:center;
+    padding:36px 16px;
+    font-family:'Space Grotesk',sans-serif;
+  }
 
-        /* Glassmorphism Effect */
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
+  /* Feine Papierkörnung im Hintergrund */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  }
 
-        .glass-button {
-            transition: all 0.15s ease-in-out;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+  .stage{ display:flex; flex-direction:column; align-items:center; }
 
-        .glass-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
+  /* ————— Das Gehäuse ————— */
+  .device{
+    width:min(360px,100%);
+    background:var(--case);
+    border-radius:26px;
+    padding:22px 20px 18px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.25),
+      0 40px 80px -24px rgba(0,0,0,.7),
+      0 12px 24px -12px rgba(0,0,0,.5),
+      inset 0 1.5px 0 rgba(255,255,255,.6),
+      inset 0 -3px 0 rgba(0,0,0,.06);
+  }
 
-        .glass-button:active {
-            transform: translateY(1px) scale(0.97);
-        }
+  /* ————— Kopfzeile ————— */
+  .head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+  .brand-name{ display:block; font-weight:700; font-size:15px; letter-spacing:.24em; color:var(--brand); }
+  .brand-sub{ display:block; margin-top:4px; font-weight:500; font-size:9px; letter-spacing:.18em; color:var(--brand-dim); }
+  .head-right{ display:flex; align-items:center; gap:14px; }
 
-        /* Button Variations */
-        .btn-number {
-            background: rgba(51, 65, 85, 0.6);
-            color: #f8fafc;
-        }
-        .btn-number:hover {
-            background: rgba(71, 85, 105, 0.8);
-        }
+  /* Dekorative Solarzelle */
+  .solar{ display:flex; gap:3px; padding:3px; background:#191713; border-radius:4px;
+          box-shadow:inset 0 1px 4px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.4); }
+  .solar i{ width:9px; height:16px; border-radius:1px; background:#2C3126; }
+  .solar i:nth-child(2){ background:#323729; }
+  .solar i:nth-child(3){ background:#2A2F25; }
+  .solar i:nth-child(4){ background:#343A2B; }
 
-        .btn-operator {
-            background: rgba(99, 102, 241, 0.25);
-            color: #818cf8;
-            font-weight: 600;
-        }
-        .btn-operator:hover {
-            background: rgba(99, 102, 241, 0.4);
-            color: #ffffff;
-        }
+  /* Klang-Schalter */
+  .sound{ display:flex; align-items:center; gap:7px; cursor:pointer; user-select:none; }
+  .sound span{ font-weight:700; font-size:9px; letter-spacing:.16em; color:var(--brand-dim); }
+  .sound input{ display:none; }
+  .sw{ width:30px; height:16px; border-radius:99px; background:#CFC8B4; position:relative;
+       box-shadow:inset 0 1px 3px rgba(0,0,0,.28); transition:background .15s; }
+  .sw::after{ content:""; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%;
+              background:#F4EFE1; box-shadow:0 1px 2px rgba(0,0,0,.35); transition:transform .15s; }
+  .sound input:checked + .sw{ background:var(--op); }
+  .sound input:checked + .sw::after{ transform:translateX(14px); }
 
-        .btn-action {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            font-weight: 600;
-        }
-        .btn-action:hover {
-            background: rgba(239, 68, 68, 0.35);
-            color: #ffffff;
-        }
+  /* ————— Display ————— */
+  .display{ background:#DCD5C2; border-radius:16px; padding:12px;
+            box-shadow:inset 0 2px 5px rgba(0,0,0,.14), inset 0 -1px 0 rgba(255,255,255,.55); }
+  .screen{ background:var(--lcd); border-radius:9px; padding:10px 16px 12px; overflow:hidden;
+           box-shadow:inset 0 3px 10px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.3); }
+  .expr{ height:18px; font:400 13px 'Space Mono',monospace; color:var(--lcd-dim);
+         text-align:right; white-space:nowrap; }
+  .readout{ position:relative; display:flex; justify-content:flex-end; margin-top:2px;
+            font-size:40px; line-height:54px; }
+  .screen.long   .readout{ font-size:31px; }
+  .screen.xlong  .readout{ font-size:23px; }
+  .ghost, .value{ font:700 1em 'Space Mono',monospace; letter-spacing:.02em; }
+  .ghost{ position:absolute; right:0; top:0; bottom:0; display:flex; align-items:center;
+          color:rgba(216,230,206,.08); pointer-events:none; }
+  .value{ position:relative; color:var(--lcd-ink); background:var(--lcd); }
+  .screen.err .value{ color:var(--lcd-err); }
+  .value.flash{ animation:flash .35s ease-out; }
+  @keyframes flash{ 0%{ color:#F6FFEC; } 100%{ color:var(--lcd-ink); } }
+  .screen.shake{ animation:shake .28s; }
+  @keyframes shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-4px); } 75%{ transform:translateX(4px); } }
 
-        .btn-equal {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            color: #ffffff;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        }
-        .btn-equal:hover {
-            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
-            filter: brightness(1.1);
-        }
+  /* ————— Tasten ————— */
+  .keys{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:18px; }
+  .key{
+    height:58px; border:0; border-radius:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--num); color:var(--num-ink);
+    box-shadow:0 4px 0 var(--num-well), 0 7px 12px rgba(0,0,0,.22);
+    transform:translateY(0);
+    transition:transform .06s ease, box-shadow .06s ease, filter .12s ease;
+  }
+  .key:hover{ filter:brightness(1.07); }
+  .key:active, .key.pressed{
+    transform:translateY(3px);
+    box-shadow:0 1px 0 var(--num-well), 0 2px 5px rgba(0,0,0,.18);
+  }
+  .key:focus-visible{ outline:2px solid var(--eq); outline-offset:2px; }
 
-        /* Custom Scrollbar for History */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.5);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.5);
-            border-radius: 4px;
-        }
-    </style>
+  .num { font:700 21px 'Space Mono',monospace; }
+  .util{ background:var(--util); color:var(--util-ink);
+         box-shadow:0 4px 0 var(--util-well), 0 7px 12px rgba(0,0,0,.22); font:700 17px 'Space Mono',monospace; }
+  .util:active, .util.pressed{ box-shadow:0 1px 0 var(--util-well), 0 2px 5px rgba(0,0,0,.18); }
+  .util.danger{ color:var(--eq); }
+
+  .op{ background:var(--op); color:var(--op-ink); font:400 26px 'Space Mono',monospace;
+       box-shadow:0 4px 0 var(--op-well), 0 7px 12px rgba(0,0,0,.22); }
+  .op:active, .op.pressed{ box-shadow:0 1px 0 var(--op-well), 0 2px 5px rgba(0,0,0,.18); }
+
+  .eq{ background:var(--eq); color:var(--eq-ink); font:400 27px 'Space Mono',monospace;
+       box-shadow:0 4px 0 var(--eq-well), 0 7px 12px rgba(0,0,0,.22); }
+  .eq:active, .eq.pressed{ box-shadow:0 1px 0 var(--eq-well), 0 2px 5px rgba(0,0,0,.18); }
+
+  .foot{ margin-top:16px; text-align:center; font-weight:500; font-size:8.5px;
+         letter-spacing:.24em; color:#A79B82; }
+
+  .hint{ margin-top:22px; font-weight:500; font-size:10px; letter-spacing:.16em;
+         color:#7E7666; text-align:center; }
+
+  @media (max-width:400px){
+    .device{ padding:16px 14px 14px; }
+    .keys{ gap:8px; }
+    .key{ height:52px; }
+  }
+</style>
 </head>
-<body class="flex flex-col items-center justify-center p-4 min-h-screen text-slate-100">
+<body>
 
-    <div class="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-5 relative overflow-hidden">
-        
-        <!-- Top Navigation / Actions -->
-        <div class="flex justify-between items-center text-xs text-slate-400">
-            <span class="font-semibold tracking-wider text-indigo-400 uppercase flex items-center gap-1.5">
-                <i class="fa-solid fa-calculator"></i> Calculator Pro
-            </span>
-            <div class="flex gap-2">
-                <button id="toggle-history-btn" class="hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition flex items-center gap-1.5" title="Verlauf anzeigen">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Verlauf
-                </button>
-                <button id="open-github-modal" class="hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition flex items-center gap-1.5" title="GitHub Pages Anleitung">
-                    <i class="fa-brands fa-github"></i> GitHub
-                </button>
-            </div>
+<main class="stage">
+  <section class="device" aria-label="Taschenrechner">
+
+    <header class="head">
+      <div class="brand">
+        <span class="brand-name">ARITHMETIK</span>
+        <span class="brand-sub">MOD. R·01 · ZEHN STELLEN</span>
+      </div>
+      <div class="head-right">
+        <div class="solar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <label class="sound" title="Tastenton ein/aus">
+          <span>KLANG</span>
+          <input type="checkbox" id="soundSwitch" checked>
+          <i class="sw"></i>
+        </label>
+      </div>
+    </header>
+
+    <section class="display">
+      <div class="screen" id="screen">
+        <div class="expr" id="expr">&nbsp;</div>
+        <div class="readout">
+          <div class="ghost" aria-hidden="true">00000000000000</div>
+          <div class="value" id="value" aria-live="polite">0</div>
         </div>
+      </div>
+    </section>
 
-        <!-- Calculator Display -->
-        <div class="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-4 flex flex-col justify-between items-end min-h-[110px] shadow-inner transition-all">
-            <div id="history-display" class="text-slate-400 text-sm sm:text-base font-mono h-6 overflow-x-auto w-full text-right whitespace-nowrap custom-scrollbar"></div>
-            <div id="current-display" class="text-3xl sm:text-4xl font-bold font-mono tracking-wider text-white overflow-x-auto w-full text-right whitespace-nowrap custom-scrollbar">0</div>
-        </div>
+    <section class="keys" id="keys">
+      <button class="key util danger" data-action="clear">C</button>
+      <button class="key util" data-action="sign">±</button>
+      <button class="key util" data-action="percent">%</button>
+      <button class="key op" data-action="operator" data-op="÷">÷</button>
 
-        <!-- Keypad Grid -->
-        <div class="grid grid-cols-4 gap-3 text-lg font-medium">
-            <!-- Row 1 -->
-            <button class="glass-button btn-action rounded-2xl py-3.5 flex items-center justify-center text-base" data-action="all-clear">AC</button>
-            <button class="glass-button btn-action rounded-2xl py-3.5 flex items-center justify-center text-base" data-action="delete"><i class="fa-solid fa-delete-left"></i></button>
-            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="percent">%</button>
-            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="/">÷</button>
+      <button class="key num" data-digit="7">7</button>
+      <button class="key num" data-digit="8">8</button>
+      <button class="key num" data-digit="9">9</button>
+      <button class="key op" data-action="operator" data-op="×">×</button>
 
-            <!-- Row 2 -->
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="7">7</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="8">8</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="9">9</button>
-            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="*">×</button>
+      <button class="key num" data-digit="4">4</button>
+      <button class="key num" data-digit="5">5</button>
+      <button class="key num" data-digit="6">6</button>
+      <button class="key op" data-action="operator" data-op="−">−</button>
 
-            <!-- Row 3 -->
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="4">4</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="5">5</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="6">6</button>
-            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="-">−</button>
+      <button class="key num" data-digit="1">1</button>
+      <button class="key num" data-digit="2">2</button>
+      <button class="key num" data-digit="3">3</button>
+      <button class="key op" data-action="operator" data-op="+">+</button>
 
-            <!-- Row 4 -->
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="1">1</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="2">2</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="3">3</button>
-            <button class="glass-button btn-operator rounded-2xl py-3.5 flex items-center justify-center" data-action="operator" data-value="+">+</button>
+      <button class="key num" data-digit="0">0</button>
+      <button class="key num" data-action="dot">,</button>
+      <button class="key util" data-action="backspace" aria-label="Rücktaste">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 4H8l-5 8 5 8h13a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z"/>
+          <line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/>
+        </svg>
+      </button>
+      <button class="key eq" data-action="equals">=</button>
+    </section>
 
-            <!-- Row 5 -->
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center text-base" data-action="negate">±</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center" data-value="0">0</button>
-            <button class="glass-button btn-number rounded-2xl py-3.5 flex items-center justify-center font-bold" data-value=".">,</button>
-            <button class="glass-button btn-equal rounded-2xl py-3.5 flex items-center justify-center text-xl" data-action="calculate">=</button>
-        </div>
+    <footer class="foot">KETTENRECHNUNG · SIGNALTON · VORZEICHENWECHSEL</footer>
+  </section>
 
-        <!-- Footer Notice -->
-        <div class="text-center text-xs text-slate-500 mt-1">
-            Unterstützt Tastatureingabe • Mit ❤️ für GitHub Pages
-        </div>
-    </div>
+  <p class="hint">TASTATUR&ensp;·&ensp;0–9&ensp;,&ensp;+ − × ÷&ensp;·&ensp;ENTER =&ensp;·&ensp;ESC C&ensp;·&ensp;RÜCKTASTE LÖSCHT</p>
+</main>
 
-    <!-- History Drawer (Overlay) -->
-    <div id="history-drawer" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden flex justify-center items-end sm:items-center p-4">
-        <div class="w-full max-w-md glass-panel rounded-3xl p-6 max-h-[80vh] flex flex-col gap-4 shadow-2xl border border-slate-700/50">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-700/50">
-                <h3 class="text-lg font-bold text-indigo-300 flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Berechnungsverlauf
-                </h3>
-                <button id="close-history-btn" class="text-slate-400 hover:text-white p-1 rounded-lg">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-            
-            <div id="history-list" class="flex flex-col gap-2.5 overflow-y-auto max-h-[50vh] pr-1 custom-scrollbar">
-                <p class="text-slate-500 text-center py-8">Noch keine Berechnungen durchgeführt.</p>
-            </div>
+<script>
+(function(){
+  'use strict';
 
-            <div class="flex gap-3 pt-2">
-                <button id="clear-history-btn" class="w-full py-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition text-sm font-medium">
-                    Verlauf leeren
-                </button>
-            </div>
-        </div>
-    </div>
+  // ————— Zustand —————
+  let cur   = '0';    // aktuelle Eingabe als String (intern mit Punkt)
+  let acc   = null;   // gespeicherter erster Operand
+  let op    = null;   // gespeicherter Operator
+  let fresh = true;   // nächste Ziffer ersetzt die Anzeige
+  let error = false;
+  let expr  = '';     // kleine Rechnungs-Vorschau
 
-    <!-- GitHub Pages Modal -->
-    <div id="github-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
-        <div class="w-full max-w-lg glass-panel rounded-3xl p-6 max-h-[90vh] overflow-y-auto custom-scrollbar border border-slate-700/50">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-700/50">
-                <h3 class="text-lg font-bold text-indigo-300 flex items-center gap-2">
-                    <i class="fa-brands fa-github text-2xl"></i> Auf GitHub Pages bereitstellen
-                </h3>
-                <button id="close-github-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
+  // ————— DOM —————
+  const valueEl = document.getElementById('value');
+  const exprEl  = document.getElementById('expr');
+  const screenEl= document.getElementById('screen');
+  const keysEl  = document.getElementById('keys');
 
-            <div class="flex flex-col gap-4 my-4 text-sm text-slate-300 leading-relaxed">
-                <p>Folge diesen einfachen Schritten, um deinen Taschenrechner kostenlos auf GitHub zu veröffentlichen:</p>
+  // ————— Klang (Web Audio, kein externes Asset) —————
+  let actx = null, soundOn = true;
+  function ensureAudio(){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!actx && AC) actx = new AC();
+    if (actx && actx.state === 'suspended') actx.resume();
+  }
+  function tone(f, d, type, v){
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(v || .06, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + d + .02);
+  }
+  function beep(kind){
+    if (!soundOn) return;
+    ensureAudio();
+    if (!actx) return;
+    if      (kind === 'eq')  { tone(1250,.05); setTimeout(function(){ tone(950,.07); }, 55); }
+    else if (kind === 'op')    tone(1050,.045);
+    else if (kind === 'err')   tone(300,.2,'sawtooth',.07);
+    else                       tone(1500,.035);
+  }
 
-                <ol class="list-decimal list-inside space-y-2.5 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                    <li><strong class="text-white">GitHub Account:</strong> Melde dich auf <a href="https://github.com" target="_blank" class="text-indigo-400 underline">github.com</a> an.</li>
-                    <li><strong class="text-white">Neues Repository:</strong> Klicke auf das <strong>"+"</strong>-Symbol oben rechts &rarr; <strong>New repository</strong>.</li>
-                    <li><strong class="text-white">Name vergeben:</strong> Nenne es z.B. <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">taschenrechner</code> und erstelle es (Public).</li>
-                    <li><strong class="text-white">Datei hochladen:</strong> Klicke auf <strong>"uploading an existing file"</strong>. Lade diese Datei unter dem Dateinamen <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">index.html</code> hoch.</li>
-                    <li><strong class="text-white">GitHub Pages aktivieren:</strong> Gehe in deinem Repository zu <strong>Settings</strong> &rarr; <strong>Pages</strong> (linke Menüleiste).</li>
-                    <li><strong class="text-white">Quelle wählen:</strong> Wähle unter <em>Build and deployment / Branch</em> den Branch <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">main</code> (oder <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300">master</code>) und klicke auf <strong>Save</strong>.</li>
-                </ol>
+  document.getElementById('soundSwitch').addEventListener('change', function(){
+    soundOn = this.checked;
+    if (soundOn){ ensureAudio(); if (actx) tone(1300,.04); }
+  });
 
-                <p class="text-xs text-slate-400 bg-indigo-950/40 p-3 rounded-lg border border-indigo-800/40">
-                    <i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i> Nach 1-2 Minuten ist deine Webseite unter <code class="text-indigo-300">https://dein-username.github.io/taschenrechner/</code> weltweit erreichbar!
-                </p>
-            </div>
+  // ————— Zahlen-Formatierung —————
+  function numToStr(n){                       // Zahl → String, Float-Artefakte entfernen
+    n = parseFloat(n.toPrecision(12));
+    if (Math.abs(n) >= 1e12 || (n !== 0 && Math.abs(n) < 1e-9))
+      return n.toExponential(6).replace('.', ',').replace('e', 'E');
+    return String(n);
+  }
+  function pretty(s){                         // deutsche Anzeige: 1.234.567,89
+    if (s.includes('E') || s === 'FEHLER') return s;
+    let neg = s.startsWith('-'); if (neg) s = s.slice(1);
+    let p = s.split('.'), i = p[0], f = p[1];
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (neg ? '-' : '') + i + (f !== undefined ? ',' + f : '');
+  }
 
-            <button id="close-github-modal-btn" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition">
-                Verstanden!
-            </button>
-        </div>
-    </div>
+  // ————— Anzeige —————
+  function render(){
+    const t = error ? 'FEHLER' : pretty(cur);
+    valueEl.textContent = t;
+    screenEl.classList.toggle('long',  t.length > 9  && t.length <= 12);
+    screenEl.classList.toggle('xlong', t.length > 12);
+    exprEl.textContent = expr || '\u00A0';
+  }
+  function flashResult(){
+    valueEl.classList.remove('flash'); void valueEl.offsetWidth;
+    valueEl.classList.add('flash');
+  }
 
-    <script>
-        // --- Calculator Engine State ---
-        let currentInput = '0';
-        let previousInput = '';
-        let operator = null;
-        let shouldResetDisplay = false;
-        let history = [];
+  // ————— Rechen-Kern —————
+  function calc(a, o, b){
+    if (o === '+') return a + b;
+    if (o === '−') return a - b;
+    if (o === '×') return a * b;
+    if (o === '÷') return b === 0 ? NaN : a / b;
+    return b;
+  }
+  function showError(){
+    error = true; cur = 'FEHLER'; acc = null; op = null; fresh = true; expr = '';
+    screenEl.classList.add('err');
+    screenEl.classList.remove('shake'); void screenEl.offsetWidth;
+    screenEl.classList.add('shake');
+    beep('err'); render();
+  }
+  function clearAll(){
+    beep('key');
+    cur = '0'; acc = null; op = null; fresh = true; error = false; expr = '';
+    screenEl.classList.remove('err');
+    render();
+  }
 
-        // --- DOM Elements ---
-        const currentDisplay = document.getElementById('current-display');
-        const historyDisplay = document.getElementById('history-display');
-        const historyDrawer = document.getElementById('history-drawer');
-        const historyList = document.getElementById('history-list');
-        const githubModal = document.getElementById('github-modal');
+  // ————— Eingaben —————
+  function digit(d){
+    beep('key');
+    if (error){ cur = '0'; acc = null; op = null; error = false; expr = ''; screenEl.classList.remove('err'); }
+    if (fresh){ cur = d; fresh = false; }
+    else if (cur.replace(/[^0-9]/g,'').length < 12){
+      cur = (cur === '0') ? d : cur + d;
+    }
+    render();
+  }
+  function dot(){
+    beep('key');
+    if (error){ clearAll(); }
+    if (fresh){ cur = '0.'; fresh = false; }
+    else if (!cur.includes('.')) cur += '.';
+    render();
+  }
+  function sign(){
+    if (error) return;
+    beep('op');
+    if (cur !== '0') cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur;
+    render();
+  }
+  function percent(){
+    if (error) return;
+    beep('op');
+    cur = numToStr(parseFloat(cur) / 100);
+    fresh = false; render();
+  }
+  function backspace(){
+    if (error || fresh){ if (error) clearAll(); return; }
+    beep('key');
+    if (cur.length === 1 || (cur.length === 2 && cur.startsWith('-'))) cur = '0';
+    else cur = cur.slice(0, -1);
+    render();
+  }
+  function setOp(o){
+    if (error) return;
+    if (op !== null && !fresh){
+      const r = calc(acc, op, parseFloat(cur));
+      if (!isFinite(r)){ showError(); return; }
+      acc = parseFloat(numToStr(r));
+      cur = numToStr(r);
+    } else if (acc === null || op === null){
+      acc = parseFloat(cur);
+    }
+    op = o; fresh = true;
+    expr = pretty(numToStr(acc)) + ' ' + o;
+    beep('op'); render();
+  }
+  function equals(){
+    if (error) return;
+    if (op === null || acc === null){ beep('key'); return; }
+    beep('eq');
+    const a = acc, b = parseFloat(cur);
+    const r = calc(a, op, b);
+    expr = pretty(numToStr(a)) + ' ' + op + ' ' + pretty(numToStr(b)) + ' =';
+    if (!isFinite(r)){ showError(); return; }
+    cur = numToStr(r); acc = null; op = null; fresh = true;
+    flashResult(); render();
+  }
 
-        // Format display number (German format with commas for decimals)
-        function formatNumber(numStr) {
-            if (numStr === 'Fehler' || numStr === '') return numStr;
-            
-            // Handle negative sign
-            let prefix = '';
-            if (numStr.startsWith('-')) {
-                prefix = '-';
-                numStr = numStr.substring(1);
-            }
+  // ————— Klick auf Tasten —————
+  keysEl.addEventListener('click', function(e){
+    const b = e.target.closest('.key'); if (!b) return;
+    if (b.dataset.digit !== undefined){ digit(b.dataset.digit); return; }
+    switch (b.dataset.action){
+      case 'dot':       dot();        break;
+      case 'clear':     clearAll();   break;
+      case 'sign':      sign();       break;
+      case 'percent':   percent();    break;
+      case 'backspace': backspace();  break;
+      case 'operator':  setOp(b.dataset.op); break;
+      case 'equals':    equals();     break;
+    }
+  });
 
-            const parts = numStr.split('.');
-            let integerPart = parts[0];
-            const decimalPart = parts.length > 1 ? ',' + parts[1] : '';
+  // ————— Tastatur-Bedienung (mit sichtbarem Tastendruck) —————
+  const q = function(s){ return keysEl.querySelector(s); };
+  const numBtns = {}, opBtns = {};
+  keysEl.querySelectorAll('[data-digit]').forEach(function(b){ numBtns[b.dataset.digit] = b; });
+  keysEl.querySelectorAll('[data-op]').forEach(function(b){ opBtns[b.dataset.op] = b; });
+  const B = {
+    dot: q('[data-action="dot"]'),   clear: q('[data-action="clear"]'),
+    sign: q('[data-action="sign"]'), pct: q('[data-action="percent"]'),
+    bs: q('[data-action="backspace"]'), eq: q('[data-action="equals"]')
+  };
+  function press(btn){
+    if (!btn) return;
+    btn.classList.add('pressed');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function(){ btn.classList.remove('pressed'); }, 120);
+  }
 
-            // Add thousands separator (dots)
-            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  window.addEventListener('keydown', function(e){
+    const k = e.key;
+    if (k >= '0' && k <= '9'){ e.preventDefault(); digit(k); press(numBtns[k]); }
+    else if (k === ',' || k === '.'){ e.preventDefault(); dot(); press(B.dot); }
+    else if (k === '+'){ e.preventDefault(); setOp('+'); press(opBtns['+']); }
+    else if (k === '-'){ e.preventDefault(); setOp('−'); press(opBtns['−']); }
+    else if (k === '*' || k.toLowerCase() === 'x'){ e.preventDefault(); setOp('×'); press(opBtns['×']); }
+    else if (k === '/'){ e.preventDefault(); setOp('÷'); press(opBtns['÷']); }
+    else if (k === 'Enter' || k === '='){ e.preventDefault(); equals(); press(B.eq); }
+    else if (k === 'Escape'){ e.preventDefault(); clearAll(); press(B.clear); }
+    else if (k === 'Backspace'){ backspace(); press(B.bs); }
+    else if (k === '%'){ e.preventDefault(); percent(); press(B.pct); }
+  });
 
-            return prefix + integerPart + decimalPart;
-        }
-
-        // Update Screen Displays
-        function updateDisplay() {
-            currentDisplay.textContent = formatNumber(currentInput);
-            if (operator !== null) {
-                const opSymbol = getOperatorSymbol(operator);
-                historyDisplay.textContent = `${formatNumber(previousInput)} ${opSymbol}`;
-            } else {
-                historyDisplay.textContent = '';
-            }
-        }
-
-        function getOperatorSymbol(op) {
-            switch(op) {
-                case '+': return '+';
-                case '-': return '−';
-                case '*': return '×';
-                case '/': return '÷';
-                default: return op;
-            }
-        }
-
-        // Key/Button Handlers
-        function appendNumber(number) {
-            if (currentInput === 'Fehler') currentInput = '0';
-
-            if (number === '.' && currentInput.includes('.')) return;
-
-            if (shouldResetDisplay) {
-                currentInput = number === '.' ? '0.' : number;
-                shouldResetDisplay = false;
-            } else {
-                if (currentInput === '0' && number !== '.') {
-                    currentInput = number;
-                } else {
-                    currentInput += number;
-                }
-            }
-            updateDisplay();
-        }
-
-        function handleOperator(op) {
-            if (currentInput === 'Fehler') return;
-
-            if (operator !== null && !shouldResetDisplay) {
-                calculateResult();
-            }
-
-            previousInput = currentInput;
-            operator = op;
-            shouldResetDisplay = true;
-            updateDisplay();
-        }
-
-        function calculateResult() {
-            if (operator === null || shouldResetDisplay) return;
-
-            let result = 0;
-            const prev = parseFloat(previousInput);
-            const curr = parseFloat(currentInput);
-
-            if (isNaN(prev) || isNaN(curr)) return;
-
-            switch (operator) {
-                case '+':
-                    result = prev + curr;
-                    break;
-                case '-':
-                    result = prev - curr;
-                    break;
-                case '*':
-                    result = prev * curr;
-                    break;
-                case '/':
-                    if (curr === 0) {
-                        currentInput = 'Fehler';
-                        operator = null;
-                        previousInput = '';
-                        updateDisplay();
-                        return;
-                    }
-                    result = prev / curr;
-                    break;
-            }
-
-            // Fix floating point inaccuracies (e.g. 0.1 + 0.2)
-            result = Math.round(result * 1e10) / 1e10;
-
-            const fullCalculation = `${formatNumber(previousInput)} ${getOperatorSymbol(operator)} ${formatNumber(currentInput)} = ${formatNumber(result.toString())}`;
-            
-            // Add to history
-            addHistoryItem(fullCalculation, result.toString());
-
-            currentInput = result.toString();
-            operator = null;
-            previousInput = '';
-            shouldResetDisplay = true;
-            updateDisplay();
-        }
-
-        function clearAll() {
-            currentInput = '0';
-            previousInput = '';
-            operator = null;
-            shouldResetDisplay = false;
-            updateDisplay();
-        }
-
-        function deleteLast() {
-            if (currentInput === 'Fehler' || shouldResetDisplay) {
-                clearAll();
-                return;
-            }
-
-            if (currentInput.length === 1 || (currentInput.length === 2 && currentInput.startsWith('-'))) {
-                currentInput = '0';
-            } else {
-                currentInput = currentInput.slice(0, -1);
-            }
-            updateDisplay();
-        }
-
-        function toggleNegate() {
-            if (currentInput === 'Fehler' || currentInput === '0') return;
-            currentInput = (parseFloat(currentInput) * -1).toString();
-            updateDisplay();
-        }
-
-        function calculatePercent() {
-            if (currentInput === 'Fehler') return;
-            currentInput = (parseFloat(currentInput) / 100).toString();
-            updateDisplay();
-        }
-
-        // History Drawer Logic
-        function addHistoryItem(calculationText, rawResult) {
-            history.unshift({ calc: calculationText, result: rawResult });
-            renderHistory();
-        }
-
-        function renderHistory() {
-            if (history.length === 0) {
-                historyList.innerHTML = '<p class="text-slate-500 text-center py-8">Noch keine Berechnungen durchgeführt.</p>';
-                return;
-            }
-
-            historyList.innerHTML = history.map((item, index) => `
-                <div onclick="useHistoryResult('${item.result}')" class="bg-slate-800/60 hover:bg-slate-700/60 p-3 rounded-xl cursor-pointer transition border border-slate-700/40 flex flex-col items-end group">
-                    <span class="text-xs text-slate-400 font-mono">${item.calc}</span>
-                </div>
-            `).join('');
-        }
-
-        function useHistoryResult(rawResult) {
-            currentInput = rawResult;
-            shouldResetDisplay = false;
-            updateDisplay();
-            historyDrawer.classList.add('hidden');
-        }
-
-        // Event Listeners for UI Buttons
-        document.querySelectorAll('button[data-value]').forEach(btn => {
-            btn.addEventListener('click', () => appendNumber(btn.dataset.value));
-        });
-
-        document.querySelectorAll('button[data-action]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                if (action === 'operator') handleOperator(btn.dataset.value);
-                if (action === 'calculate') calculateResult();
-                if (action === 'all-clear') clearAll();
-                if (action === 'delete') deleteLast();
-                if (action === 'negate') toggleNegate();
-                if (action === 'percent') calculatePercent();
-            });
-        });
-
-        // Keyboard Shortcuts Support
-        window.addEventListener('keydown', (e) => {
-            if (githubModal.classList.contains('hidden') === false) return; // Ignore if modal open
-
-            if ((e.key >= '0' && e.key <= '9')) appendNumber(e.key);
-            if (e.key === '.' || e.key === ',') appendNumber('.');
-            if (e.key === '+') handleOperator('+');
-            if (e.key === '-') handleOperator('-');
-            if (e.key === '*') handleOperator('*');
-            if (e.key === '/') {
-                e.preventDefault();
-                handleOperator('/');
-            }
-            if (e.key === 'Enter' || e.key === '=') {
-                e.preventDefault();
-                calculateResult();
-            }
-            if (e.key === 'Backspace') deleteLast();
-            if (e.key === 'Escape') clearAll();
-            if (e.key === '%') calculatePercent();
-        });
-
-        // Modal Controls
-        document.getElementById('toggle-history-btn').addEventListener('click', () => historyDrawer.classList.remove('hidden'));
-        document.getElementById('close-history-btn').addEventListener('click', () => historyDrawer.classList.add('hidden'));
-        document.getElementById('clear-history-btn').addEventListener('click', () => {
-            history = [];
+  render();
+})();
+</script>
+</body>
+</html>
